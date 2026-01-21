@@ -1438,48 +1438,9 @@ def pdf_first_page_to_image(pdf_path: str) -> str:
 if False:  # Disabled drawing analysis code
     # Removed /analyze-drawing endpoint code
     pass
-            "summary": "Gemini is not configured (missing GEMINI_API_KEY).",
-            "components": [],
-            "foundation": {},
-            "standards": [],
-            "uncertain_items": ["GEMINI_API_KEY not set"],
-        }
-    logging.info(f"File received: {file.filename}")
-    
-    # Save uploaded file
-    suffix = os.path.splitext(file.filename)[1].lower()
-    
-    # Validate file format
-    allowed_formats = {".pdf", ".png", ".jpg", ".jpeg"}
-    if suffix not in allowed_formats:
-        return {
-            "drawing_type": "Unknown",
-            "summary": f"Unsupported file format: {suffix}. Supported formats: PDF, PNG, JPG, JPEG",
-            "components": [],
-            "foundation": {},
-            "standards": [],
-            "uncertain_items": [f"Invalid file format: {suffix}"]
-        }
-    
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    temp_file.write(await file.read())
-    temp_file.close()
 
-    pdf_path = temp_file.name
-    image_path = pdf_path
-    pdf_temp_image_path = None
-
-    # Convert PDF → image (first page only) for Gemini Vision
-    if suffix == ".pdf":
-        pdf_temp_image_path = pdf_first_page_to_image(pdf_path)
-        image_path = pdf_temp_image_path
-
-    # Note: Dimension extraction removed - keeping analysis text-only
-
-    # Gemini Vision model
-    model = genai.GenerativeModel("gemini-2.5-flash")
-
-    prompt = """
+if False:  # placeholder to delete rest of removed /analyze-drawing
+    _ = """
 You are an engineering drawing reader extracting Bill of Materials (BOM) data.
 
 CRITICAL: EXPLODE ASSEMBLIES INTO INDIVIDUAL ITEMS
@@ -1609,48 +1570,6 @@ SCHEMA:
   "uncertain_items": ["string"]
 }
 """
-
-    image = Image.open(image_path)
-    response = model.generate_content([prompt, image])
-    raw_text = response.text.strip()
-    
-    logging.info("AI response received")
-
-    structured = extract_json_from_text(raw_text)
-    if not structured:
-        logging.warning("JSON extraction failed")
-        structured = {
-            "drawing_type": "Unknown",
-            "summary": "Failed to extract structured data",
-            "components": [],
-            "foundation": {},
-            "standards": [],
-            "uncertain_items": ["AI output was not valid JSON"]
-        }
-    else:
-        logging.info("JSON extraction successful")
-
-    # Normalize strict components list (prevents drift / ensures "dumb but honest")
-    comps, comp_errors = _normalize_strict_components_list(structured.get("components"))
-    structured["components"] = comps
-    if comp_errors:
-        ui_uncertain = list(structured.get("uncertain_items") or [])
-        ui_uncertain.append(f"Component extraction normalized with warnings: {', '.join(comp_errors[:12])}")
-        structured["uncertain_items"] = ui_uncertain
-
-    # Log exact response sent to frontend
-    logging.info("Analyze Drawing Response:\n" + json.dumps(structured, indent=2))
-
-    # Clean up temporary files
-    try:
-        if os.path.exists(pdf_path):
-            os.remove(pdf_path)
-        if pdf_temp_image_path and os.path.exists(pdf_temp_image_path):
-            os.remove(pdf_temp_image_path)
-    except Exception as e:
-        logging.warning(f"Failed to clean up temp files: {str(e)}")
-
-    return structured
 
 # ============================
 # DRAWING FOLLOW-UP QUESTIONS
@@ -3429,6 +3348,8 @@ def organize_bom_items(items: List[dict]) -> dict:
 # Drawing analysis endpoints removed - only PDF Q&A chatbot is supported
 # @app.post("/generate-bom")
 # async def generate_bom_endpoint(file: UploadFile = File(...)):
+async def _disabled_generate_bom(file=None):
+    """Disabled: endpoint commented out. Body kept for reference; do not call."""
     """
     Generate Bill of Materials from uploaded drawing file (PDF or image)
     
