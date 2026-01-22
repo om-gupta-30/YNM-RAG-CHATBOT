@@ -1,5 +1,51 @@
+# Environment variables
 .env
+.env.local
+.env.*.local
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-*.pyc
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application specific
 faiss.index
+bom_cache/
+*.log
+
+# Frontend
+ui/node_modules/
+ui/dist/
+ui/dist-ssr/
+ui/.vite/
+
+# Optional: Large data files (uncomment if needed)
+# vision_captions.json
+# images/
