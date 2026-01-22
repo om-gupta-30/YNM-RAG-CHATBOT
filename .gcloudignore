@@ -1,0 +1,25 @@
+# Same as .dockerignore; do NOT use #!include:.gitignore (would exclude faiss.index)
+.git
+.gitignore
+.env
+.env.*
+.env.local
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.idea
+.vscode
+.DS_Store
+*.md
+!README.md
+ui/node_modules
+ui/.vite
+ui/dist
+ui/dist-ssr
+deploy-gcp.sh
+bom_cache
+*.log

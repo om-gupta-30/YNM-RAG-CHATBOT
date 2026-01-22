@@ -1,0 +1,35 @@
+# Git and env
+.git
+.gitignore
+.env
+.env.*
+.env.local
+
+# Python
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+
+# IDE and OS
+.idea
+.vscode
+.DS_Store
+*.md
+!README.md
+
+# Frontend dev (we rebuild in Docker)
+ui/node_modules
+ui/.vite
+ui/dist
+ui/dist-ssr
+
+# Deploy script (host-only)
+deploy-gcp.sh
+
+# Optional excludes (keep RAG assets: faiss.index, metadata.json, images/, vision_captions.json)
+bom_cache
+*.log

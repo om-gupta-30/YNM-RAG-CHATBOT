@@ -195,6 +195,17 @@ docker run -p 8080:8080 \
   rag-chatbot
 ```
 
+#### Deploy to GCP Cloud Run
+
+Deploy to Google Cloud Run (service `rag-pdf-chatbot`, region `asia-south1`, project `gen-lang-client-0473608308`):
+
+```bash
+# Ensure GEMINI_API_KEY is in .env or export it, then:
+./deploy-gcp.sh
+```
+
+Optional overrides: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_SERVICE_NAME`. The script enables required APIs, builds from source (Dockerfile), and deploys. The service URL is printed after deploy.
+
 ## 📡 API Endpoints
 
 | Method | Endpoint | Description |

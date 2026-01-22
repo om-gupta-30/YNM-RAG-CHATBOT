@@ -13,7 +13,7 @@ from __future__ import annotations
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 import json
 from datetime import date
@@ -492,7 +492,15 @@ class ErrorResponse(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    return {
+        "status": "ok",
+        "env": {
+            "GEMINI_API_KEY": "set" if gemini_key else "missing",
+            "GEMINI_ENABLED": bool(gemini_key),
+            "PORT": os.getenv("PORT", "not set"),
+        },
+    }
 
 
 @app.post("/classify-intent", response_model=IntentClassificationResponse)
@@ -3815,6 +3823,23 @@ SCHEMA:
                 os.remove(pdf_temp_image_path)
         except Exception as e:
             logging.warning(f"Failed to clean up temp files: {str(e)}")
+
+
+# Serve built React SPA (production): must be last so /health, /ask, etc. take precedence
+UI_DIST = os.path.abspath("ui/dist")
+if os.path.isdir(UI_DIST):
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        base = UI_DIST
+        path = os.path.normpath(os.path.join(base, full_path)) if full_path else base
+        try:
+            if os.path.commonpath([path, base]) != base:
+                return Response(status_code=404)
+        except ValueError:
+            return Response(status_code=404)
+        if os.path.isfile(path):
+            return FileResponse(path)
+        return FileResponse(os.path.join(base, "index.html"))
 
 
 if __name__ == "__main__":
