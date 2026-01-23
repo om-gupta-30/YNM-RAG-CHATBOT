@@ -57,13 +57,28 @@ gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='va
 
 echo ""
 echo "=== Checking service health ==="
-HEALTH_ENDPOINT="${SERVICE_URL}/health" || HEALTH_ENDPOINT="${SERVICE_URL}/"
+HEALTH_ENDPOINT="${SERVICE_URL}/health"
 echo "Testing endpoint: ${HEALTH_ENDPOINT}"
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${SERVICE_URL}/" || echo "000")
-if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "404" ]; then
-  echo "✓ Service is responding (HTTP ${HTTP_CODE})"
+
+# Wait a bit for service to be ready
+sleep 3
+
+# Test health endpoint
+HEALTH_RESPONSE=$(curl -s --max-time 15 "${HEALTH_ENDPOINT}" || echo "")
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${HEALTH_ENDPOINT}" || echo "000")
+
+if [ "${HTTP_CODE}" = "200" ]; then
+  echo "✓ Health endpoint is responding (HTTP ${HTTP_CODE})"
+  echo "Response: ${HEALTH_RESPONSE}"
+  # Check if GEMINI_API_KEY is set in health response
+  if echo "${HEALTH_RESPONSE}" | grep -q '"GEMINI_API_KEY":"set"\|"GEMINI_API_KEY": "set"'; then
+    echo "✓ GEMINI_API_KEY is properly configured in the service"
+  else
+    echo "⚠ GEMINI_API_KEY may not be set correctly (check response above)"
+  fi
 else
-  echo "⚠ Service returned HTTP ${HTTP_CODE} (may still be starting up)"
+  echo "⚠ Health endpoint returned HTTP ${HTTP_CODE} (may still be starting up)"
+  echo "Response: ${HEALTH_RESPONSE}"
 fi
 
 echo ""
