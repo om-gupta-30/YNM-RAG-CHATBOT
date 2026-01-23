@@ -567,6 +567,9 @@ function App() {
           </div>
         </div>
       )}
+      <div className="watermark">
+        Created by OM GUPTA
+      </div>
     </div>
   )
 }

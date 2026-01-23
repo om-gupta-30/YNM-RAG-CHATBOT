@@ -1142,6 +1142,14 @@ async def ask_question(request: QuestionRequest):
     if retrieval_error:
         return {"error": retrieval_error}
     
+    # PDF-only validation: Check if question is relevant to the PDF
+    if not chunks_data or len(chunks_data) == 0:
+        return {
+            "error": "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document.",
+            "intent": intent_info.get("intent"),
+            "target_id": intent_info.get("target_id")
+        }
+    
     retrieved_chunks = []
     sources_list = []
     
@@ -1157,6 +1165,15 @@ async def ask_question(request: QuestionRequest):
             # Heuristic mapping: sim = 1/(1+d) for L2-like distances.
             best_d = min(distances)
             semantic_match_score = 1.0 / (1.0 + float(best_d))
+            
+            # PDF-only validation: If semantic match is too poor, reject non-PDF questions
+            # Threshold: if best distance > 1.5 (roughly similarity < 0.4), likely not PDF-related
+            if best_d > 1.5:
+                return {
+                    "error": "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document.",
+                    "intent": intent_info.get("intent"),
+                    "target_id": intent_info.get("target_id")
+                }
     
     for chunk_info in chunks_data:
         chunk_text = chunk_info["text"]
@@ -1268,15 +1285,19 @@ Question:
 """
     else:
         prompt = f"""
-You are a technical document QA assistant.
+You are a technical document QA assistant that answers questions ONLY about the uploaded PDF document.
 
 NON-NEGOTIABLE RULES:
-1. Answer ONLY from the provided context.
+1. Answer ONLY from the provided context (which comes from the PDF document).
 2. If the question asks for a figure or table:
    - Do NOT explain surrounding theory.
    - Do NOT summarize the chapter.
 3. If the exact answer is not present in the context:
    - Say exactly: "Not explicitly specified in the document."
+4. If the question is about something NOT in the PDF document (e.g., general knowledge, other topics, current events):
+   - Say exactly: "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document."
+
+CRITICAL: You must ONLY answer questions about the PDF document content. If the question is not related to the PDF, you MUST respond with the message in rule 4 above.
 
 ANSWER STYLE:
 - Crisp

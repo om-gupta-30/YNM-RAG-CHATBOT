@@ -33,6 +33,8 @@ gcloud config set project "${PROJECT_ID}"
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com --quiet
 
 # Deploy from source (uses Dockerfile, builds, pushes to AR, deploys)
+echo ""
+echo "=== Starting deployment (this will show build logs with env vars) ==="
 gcloud run deploy "${SERVICE_NAME}" \
   --source . \
   --region "${REGION}" \
@@ -45,5 +47,25 @@ gcloud run deploy "${SERVICE_NAME}" \
   --max-instances 10
 
 echo ""
-echo "Done. Service URL:"
-gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='value(status.url)'
+echo "=== Deployment complete ==="
+SERVICE_URL=$(gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='value(status.url)')
+echo "Service URL: ${SERVICE_URL}"
+
+echo ""
+echo "=== Verifying environment variables ==="
+gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='value(spec.template.spec.containers[0].env)' | grep -q "GEMINI_API_KEY" && echo "✓ GEMINI_API_KEY is set" || echo "✗ GEMINI_API_KEY is missing"
+
+echo ""
+echo "=== Checking service health ==="
+HEALTH_ENDPOINT="${SERVICE_URL}/health" || HEALTH_ENDPOINT="${SERVICE_URL}/"
+echo "Testing endpoint: ${HEALTH_ENDPOINT}"
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${SERVICE_URL}/" || echo "000")
+if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "404" ]; then
+  echo "✓ Service is responding (HTTP ${HTTP_CODE})"
+else
+  echo "⚠ Service returned HTTP ${HTTP_CODE} (may still be starting up)"
+fi
+
+echo ""
+echo "=== Service status ==="
+gcloud run services describe "${SERVICE_NAME}" --region "${REGION}" --format='table(status.conditions[0].type,status.conditions[0].status,status.url)'
