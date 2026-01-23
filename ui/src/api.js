@@ -97,3 +97,28 @@ export async function expandContext(chunkIds, intent, targetId) {
   return data.contextual_sources
 }
 
+/** Generate a short chat title from the first question. Uses backend only; no API key in frontend. */
+export async function generateChatTitle(question) {
+  const response = await fetch(`${API_URL}/generate-chat-title`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ question }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error')
+    throw new Error(`Failed to generate title: ${errorText}`)
+  }
+
+  const data = await response.json()
+  if (data && typeof data.error === 'string') {
+    throw new Error(data.error)
+  }
+  if (!data || typeof data.title !== 'string') {
+    throw new Error('Invalid generate-chat-title response')
+  }
+  return data.title
+}
+

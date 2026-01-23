@@ -213,6 +213,7 @@ Optional overrides: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_SERVICE_NAME`. The scri
 | `GET` | `/health` | Health check endpoint |
 | `POST` | `/classify-intent` | Classify query intent (no FAISS/LLM) |
 | `POST` | `/expand-context` | Get surrounding chunks (no FAISS/LLM) |
+| `POST` | `/generate-chat-title` | Generate chat title from question (Gemini, server-side only) |
 | `POST` | `/ask` | Main Q&A endpoint with full RAG pipeline |
 
 ### Example API Usage
@@ -238,6 +239,8 @@ curl -X POST http://localhost:8000/ask \
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key for LLM and embeddings |
+
+**Security**: Keep `GEMINI_API_KEY` only in `.env` (or env vars). Never put it in frontend code or `VITE_*` vars—the key would be exposed in built JS. Chat title generation and all Gemini calls use the backend. Verify the key: `python test_gemini_key.py`.
 
 ### Required Files
 

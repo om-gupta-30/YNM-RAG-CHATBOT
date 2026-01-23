@@ -490,6 +490,15 @@ class IntentClassificationResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
 
+
+class GenerateChatTitleRequest(BaseModel):
+    question: str
+
+
+class GenerateChatTitleResponse(BaseModel):
+    title: str
+
+
 @app.get("/health")
 async def health():
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -523,6 +532,37 @@ async def classify_intent(request: QuestionRequest):
             refs.append(f"Page {m.group(1)}")
         info["targets"] = refs[:2] if len(refs) >= 2 else None
     return info
+
+
+@app.post("/generate-chat-title", response_model=GenerateChatTitleResponse | ErrorResponse)
+async def generate_chat_title(request: GenerateChatTitleRequest):
+    """
+    Generate a short chat title from the user's first question using Gemini.
+    Keeps the API key server-side only; never expose it to the frontend.
+    """
+    if not GEMINI_ENABLED:
+        return {"error": "Gemini is not configured (missing GEMINI_API_KEY)."}
+    question = (request.question or "").strip()
+    if not question:
+        return {"error": "question is required."}
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        prompt = """Generate a concise chat title (3–6 words) summarizing the topic.
+Rules:
+- No punctuation
+- No markdown
+- No filler words like explain, describe
+- Output ONLY the title text
+
+User question:
+"""
+        response = model.generate_content(prompt + question)
+        raw = (response.text or "").strip()
+        title = re.sub(r"[^\w\s]", "", raw).strip() or "New Chat"
+        return {"title": title[:80]}
+    except Exception as e:
+        logging.warning("generate_chat_title failed: %s", e)
+        return {"error": "Failed to generate title."}
 
 
 @app.post("/expand-context", response_model=ContextExpandResponse)

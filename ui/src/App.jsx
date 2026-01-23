@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { askQuestion, expandContext, API_URL } from './api'
+import { askQuestion, expandContext, generateChatTitle as apiGenerateChatTitle, API_URL } from './api'
 import './App.css'
 import jsPDF from 'jspdf'
 
@@ -221,75 +221,28 @@ function App() {
     setInput('')
   }
 
-  // Generate chat title using Gemini (called exactly once when first AI message is added)
+  // Generate chat title via backend (API key stays server-side; never in frontend)
   const generateChatTitle = async (chatId, question) => {
-    // Set loading placeholder
-    setChats(prev => prev.map(chat => 
+    setChats(prev => prev.map(chat =>
       chat.id === chatId && chat.title === 'New Chat' && !chat.isTitleManual
         ? { ...chat, title: 'Thinking…' }
         : chat
     ))
 
     try {
-      // Call Gemini API directly
-      const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-      if (!API_KEY) {
-        throw new Error('GEMINI_API_KEY not configured')
-      }
-
-      const prompt = `Generate a concise chat title (3–6 words) summarizing the topic.
-Rules:
-- No punctuation
-- No markdown
-- No filler words like explain, describe
-- Output ONLY the title text
-
-User question:
-${question}`
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }]
-          })
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to generate title')
-      }
-
-      const data = await response.json()
-      const title = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'New Chat'
-      
-      // Clean up title (remove any extra formatting)
+      const title = await apiGenerateChatTitle(question)
       const cleanTitle = title.replace(/[^\w\s]/g, '').trim() || 'New Chat'
-      
-      // Update chat title only if not manually set
+
       setChats(prev => {
         const chat = prev.find(c => c.id === chatId)
-        if (chat?.isTitleManual) {
-          return prev // Don't override manual titles
-        }
-        return prev.map(c => 
-          c.id === chatId
-            ? { ...c, title: cleanTitle }
-            : c
+        if (chat?.isTitleManual) return prev
+        return prev.map(c =>
+          c.id === chatId ? { ...c, title: cleanTitle } : c
         )
       })
     } catch (error) {
       console.error('Error generating title:', error)
-      // Fallback to 'New Chat' on error
-      setChats(prev => prev.map(chat => 
+      setChats(prev => prev.map(chat =>
         chat.id === chatId && chat.title === 'Thinking…' && !chat.isTitleManual
           ? { ...chat, title: 'New Chat' }
           : chat
