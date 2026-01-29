@@ -1,4 +1,4 @@
-# 🤖 RAG PDF Chatbot
+# RAG PDF Chatbot
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
@@ -7,33 +7,40 @@
 
 A **Retrieval-Augmented Generation (RAG)** application for intelligent question-answering over technical PDF documents. This system combines **FAISS** vector search, **intent-based retrieval**, and **Google Gemini** to provide accurate, source-cited answers with support for figures, tables, pages, and confidence scoring.
 
-## ✨ Features
+**Created by Om Gupta**
 
-- 🔍 **Intelligent Q&A**: Ask natural-language questions about indexed PDF documents
-- 🎯 **Intent-Aware Retrieval**: Automatically classifies queries (figure, table, page, section, general, comparison) and uses optimal retrieval strategies
-- 📊 **Structured Answers**: Returns formatted paragraphs and lists with source citations
-- 🎨 **Modern UI**: React-based chat interface with dark/light theme, multi-chat support, and PDF export
-- 📈 **Confidence Scoring**: Each answer includes High/Medium/Low confidence indicators
-- 🔗 **Source Citations**: Answers include page numbers, text excerpts, and optional page images
-- 🚀 **Fast Retrieval**: FAISS-based semantic search for efficient document querying
+---
 
-## 🎯 What This Application Does
+## Features
 
-This RAG system enables users to:
+- **Intelligent Q&A**: Ask natural-language questions about indexed PDF documents
+- **Intent-Aware Retrieval**: Automatically classifies queries (figure, table, page, section, general, comparison) and uses optimal retrieval strategies
+- **Structured Answers**: Returns formatted paragraphs and lists with source citations
+- **Modern UI**: React-based chat interface with dark/light theme, multi-chat support, and PDF export
+- **Confidence Scoring**: Each answer includes High/Medium/Low confidence indicators
+- **Source Citations**: Answers include page numbers, text excerpts, and page images
+- **Fast Retrieval**: FAISS-based semantic search for efficient document querying
 
-- **Query PDF Documents**: Ask questions in natural language about the indexed document (default: IRC:67-2022 Code of Practice for Road Signs)
-- **Smart Retrieval**: The system intelligently chooses between:
-  - **Exact matching** for specific references (e.g., "Fig 3.3", "Table 6.2", "Page 27")
-  - **Semantic search** using FAISS for general questions
-- **Structured Responses**: Answers are returned as structured JSON with paragraphs and lists
-- **Context Expansion**: View surrounding chunks without additional API calls
-- **Export Capabilities**: Export chat conversations to PDF
+---
 
-## 🏗️ Architecture Overview
+## Table of Contents
 
-### Core Concepts
+- [How It Works](#how-it-works)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [API Endpoints](#api-endpoints)
+- [Configuration](#configuration)
+- [Deployment](#deployment)
+- [Security](#security)
+- [Contributing](#contributing)
+- [License](#license)
 
-#### 1. **Retrieval-Augmented Generation (RAG)**
+---
+
+## How It Works
+
+### Retrieval-Augmented Generation (RAG)
 
 Instead of relying solely on the LLM's training data, this system:
 
@@ -43,35 +50,40 @@ Instead of relying solely on the LLM's training data, this system:
 
 This approach reduces hallucinations and ensures answers are tied to specific document pages and chunks.
 
-#### 2. **Vector Embeddings and FAISS**
+### Query Processing Flow
 
-- **Embeddings**: Questions and document chunks are converted to dense vectors using Google's `embedding-001` model
-- **FAISS**: Fast approximate nearest-neighbor search for semantic similarity
-- **Process**: Query → Embed → Search → Retrieve chunks → Pass to LLM
+```
+User Question → Intent Classification → Retrieval → Context Building → LLM Generation → Response
+```
 
-#### 3. **Intent Classification**
+1. **Intent Classification**: Analyzes the query to determine intent (figure, table, page, section, general, or comparison)
+2. **Retrieval**: Uses exact matching for specific references or FAISS semantic search for general queries
+3. **Context Building**: Assembles retrieved chunks into a context string
+4. **LLM Generation**: Sends context to Gemini with a structured prompt
+5. **Response Processing**: JSON parsing, confidence scoring, and source citation enrichment
 
-The system classifies each question before retrieval:
+### Intent Classification
 
 | Intent | Example | Retrieval Strategy |
 |--------|---------|-------------------|
-| `FIGURE_QUERY` | "What does Fig 3.3 show?" | Exact match on "Fig 3.3" in metadata |
-| `TABLE_QUERY` | "Table 6.2 guidelines" | Exact match on "Table 6.2" |
-| `PAGE_QUERY` | "What is on page 27?" | All chunks with `page_number == 27` |
+| `FIGURE_QUERY` | "What does Fig 3.3 show?" | Exact match on figure reference |
+| `TABLE_QUERY` | "Table 6.2 guidelines" | Exact match on table reference |
+| `PAGE_QUERY` | "What is on page 27?" | All chunks with matching page number |
 | `SECTION_QUERY` | "Section on mandatory signs" | Semantic/FAISS search |
-| `GENERAL_QUERY` | "Size of STOP sign?" | FAISS semantic search (k=6) |
+| `GENERAL_QUERY` | "Size of STOP sign?" | FAISS semantic search |
 | `COMPARISON_QUERY` | "Compare Fig 3.1 and Fig 3.2" | Retrieves both referenced items |
 
-#### 4. **Confidence Scoring**
+### Confidence Scoring
 
 Each answer block includes a confidence score (High/Medium/Low) based on:
 - Source type quality (OCR/IMAGE vs TEXT)
 - Number of supporting chunks
 - Semantic match score
-- Intent type
 - Verbatim presence in retrieved text
 
-## 🛠️ Tech Stack
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -82,45 +94,53 @@ Each answer block includes a confidence score (High/Medium/Low) based on:
 | **PDF Processing** | PyMuPDF (fitz), pdfplumber, Pillow |
 | **Frontend** | React 19, Vite 7 |
 | **Export** | jsPDF |
-| **Deployment** | Docker |
+| **Deployment** | Docker, GCP Cloud Run |
 
-## 📁 Project Structure
+---
+
+## Project Structure
 
 ```
 rag-chatbot/
-├── app.py                  # FastAPI backend application
+├── app.py                  # FastAPI backend (main application)
 ├── intent_classifier.py    # Query intent classification module
 ├── requirements.txt        # Python dependencies
-├── Dockerfile             # Docker configuration
-├── .gitignore            # Git ignore rules
-├── .env                   # Environment variables (create locally)
 │
-├── faiss.index           # FAISS vector index (generated, not in git)
-├── metadata.json         # Chunk catalog with text, source, page_number
-├── vision_captions.json  # Optional: Gemini vision captions cache
-├── images/               # Page images (page_{n}_img_1.png)
+├── faiss.index             # FAISS vector index
+├── metadata.json           # Chunk metadata (text, source, page numbers)
+├── vision_captions.json    # Gemini vision captions cache
+├── images/                 # Page images (page_{n}_img_1.png)
+├── bom_cache/              # BOM extraction cache
 │
-└── ui/                   # React frontend
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
-    ├── src/
-    │   ├── main.jsx      # React entry point
-    │   ├── App.jsx       # Main chat UI component
-    │   ├── App.css       # Component styles
-    │   ├── index.css     # Global styles
-    │   └── api.js        # API client functions
-    └── public/           # Static assets
+├── frontend/               # React frontend application
+│   ├── src/
+│   │   ├── App.jsx         # Main chat UI component
+│   │   ├── App.css         # Component styles
+│   │   ├── api.js          # API client functions
+│   │   ├── main.jsx        # React entry point
+│   │   └── index.css       # Global styles
+│   ├── index.html          # HTML template
+│   ├── package.json        # NPM dependencies
+│   └── vite.config.js      # Vite configuration
+│
+├── .env                    # Environment variables (not in git)
+├── .env.example            # Example environment file
+├── .gitignore              # Git ignore rules
+├── Dockerfile              # Docker configuration
+├── deploy-gcp.sh           # GCP Cloud Run deployment script
+├── README.md               # This file
+└── SECURITY.md             # Security documentation
 ```
 
-## 🚀 Quick Start
+---
+
+## Quick Start
 
 ### Prerequisites
 
 - **Python** 3.10 or higher
 - **Node.js** 18 or higher
-- **Google Gemini API Key** ([Get one here](https://makersuite.google.com/app/apikey))
-- **FAISS Index & Metadata**: The application requires `faiss.index` and `metadata.json` files (typically generated by a separate indexing pipeline)
+- **Google Gemini API Key** ([Get one here](https://aistudio.google.com/app/apikey))
 
 ### Installation
 
@@ -146,7 +166,7 @@ rag-chatbot/
 
 4. **Set up frontend**
    ```bash
-   cd ui
+   cd frontend
    npm install
    cd ..
    ```
@@ -162,61 +182,45 @@ uvicorn app:app --reload --host 0.0.0.0 --port 8000
 
 **Frontend** (in a separate terminal):
 ```bash
-cd ui
+cd frontend
 npm run dev
 ```
 
-- **API**: `http://127.0.0.1:8000`
-- **API Docs**: `http://127.0.0.1:8000/docs`
-- **Frontend**: `http://localhost:5173` (or the port Vite displays)
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Frontend**: http://localhost:5173
 
 #### Production Build
 
-**Frontend**:
 ```bash
-cd ui
+cd frontend
 npm run build
+cd ..
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-The built files will be in `ui/dist/`. Serve this directory along with the FastAPI backend.
+The built frontend files in `frontend/dist/` will be served automatically by the backend.
 
-#### Docker Deployment
+---
 
-```bash
-# Build image
-docker build -t rag-chatbot .
-
-# Run container
-docker run -p 8080:8080 \
-  -e GEMINI_API_KEY=your_key \
-  -v "$(pwd)/faiss.index:/app/faiss.index" \
-  -v "$(pwd)/metadata.json:/app/metadata.json" \
-  -v "$(pwd)/images:/app/images" \
-  rag-chatbot
-```
-
-#### Deploy to GCP Cloud Run
-
-Deploy to Google Cloud Run (service `rag-pdf-chatbot`, region `asia-south1`, project `gen-lang-client-0473608308`):
-
-```bash
-# Ensure GEMINI_API_KEY is in .env or export it, then:
-./deploy-gcp.sh
-```
-
-Optional overrides: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_SERVICE_NAME`. The script enables required APIs, builds from source (Dockerfile), and deploys. The service URL is printed after deploy.
-
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/health` | Health check endpoint |
-| `POST` | `/classify-intent` | Classify query intent (no FAISS/LLM) |
-| `POST` | `/expand-context` | Get surrounding chunks (no FAISS/LLM) |
-| `POST` | `/generate-chat-title` | Generate chat title from question (Gemini, server-side only) |
 | `POST` | `/ask` | Main Q&A endpoint with full RAG pipeline |
+| `POST` | `/classify-intent` | Classify query intent |
+| `POST` | `/expand-context` | Get surrounding chunks for context |
+| `POST` | `/generate-chat-title` | Generate chat title from question |
 
-### Example API Usage
+### Example Usage
+
+**Ask a Question**:
+```bash
+curl -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the dimensions of a STOP sign?"}'
+```
 
 **Classify Intent**:
 ```bash
@@ -225,14 +229,9 @@ curl -X POST http://localhost:8000/classify-intent \
   -d '{"question": "What does Fig 3.3 show?"}'
 ```
 
-**Ask Question**:
-```bash
-curl -X POST http://localhost:8000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What are the dimensions of a STOP sign?"}'
-```
+---
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -240,58 +239,73 @@ curl -X POST http://localhost:8000/ask \
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key for LLM and embeddings |
 
-**Security**: Keep `GEMINI_API_KEY` only in `.env` (or env vars). Never put it in frontend code or `VITE_*` vars—the key would be exposed in built JS. Chat title generation and all Gemini calls use the backend. Verify the key: `python test_gemini_key.py`.
+### Required Data Files
 
-### Required Files
+The application requires these pre-generated files:
 
-The application expects these files in the project root:
+- `faiss.index` - FAISS vector index for semantic search
+- `metadata.json` - Chunk metadata mapping IDs to text and page numbers
+- `images/` - Directory containing page images (optional but recommended)
 
-- `faiss.index`: Pre-built FAISS vector index
-- `metadata.json`: Chunk catalog mapping chunk IDs to text, source, and page numbers
-- `images/`: Directory containing page images (optional but recommended)
+---
 
-> **Note**: These files are typically generated by a separate indexing pipeline and are not included in this repository.
+## Deployment
 
-## 📖 How It Works
+### Docker
 
-### Query Processing Flow
+```bash
+# Build the image
+docker build -t rag-chatbot .
 
-1. **Intent Classification**: The query is analyzed to determine intent (figure, table, page, section, general, or comparison)
+# Run the container
+docker run -p 8080:8080 \
+  -e GEMINI_API_KEY=your_key \
+  rag-chatbot
+```
 
-2. **Retrieval**:
-   - For specific references (figures, tables, pages): Exact matching in metadata
-   - For general queries: FAISS semantic search
+### GCP Cloud Run
 
-3. **Context Building**: Retrieved chunks are assembled into a context string
+```bash
+# Deploy to Cloud Run
+./deploy-gcp.sh
+```
 
-4. **LLM Generation**: Context is sent to Gemini with a structured prompt
+The script handles building, pushing, and deploying to Cloud Run. Configure with environment variables:
+- `GCP_PROJECT_ID`
+- `GCP_REGION`
+- `GCP_SERVICE_NAME`
 
-5. **Response Processing**: 
-   - JSON parsing and validation
-   - Confidence scoring
-   - Source citation enrichment
+---
 
-6. **Response**: Structured answer with blocks, sources, and confidence scores
+## Security
 
-### Intent Classification Rules
+### API Key Protection
 
-- **Figure**: Matches patterns like "fig 3.3", "figure 3.3", "fig. 3.3"
-- **Table**: Matches "table 6.2", "tab 6.2"
-- **Page**: Matches "page 27", "pg 27", "p 27"
-- **Section**: Matches keywords like "section", "chapter", "heading"
-- **Comparison**: Detects "compare", "vs", "versus" with multiple references
-- **General**: Default fallback for all other queries
+Your Gemini API key is protected:
 
-## 🎨 Frontend Features
+- **`.gitignore`** - Excludes `.env` and all `.env.*` files from git
+- **`.dockerignore`** - Excludes `.env` files from Docker builds
+- **`.gcloudignore`** - Excludes `.env` files from GCP deployments
+- **Backend-only** - API key is only used server-side, never exposed to frontend
+
+**Never commit your `.env` file or hardcode API keys in source code.**
+
+For GCP Cloud Run deployment, set `GEMINI_API_KEY` as a secret or environment variable in the Cloud Run console.
+
+---
+
+## Frontend Features
 
 - **Multi-Chat Support**: Create and manage multiple conversation threads
-- **Persistent Storage**: Chats saved in `localStorage`
-- **Theme Toggle**: Light/dark mode support
-- **Source Highlighting**: Inline highlighting of relevant phrases in source excerpts
-- **PDF Export**: Export conversations using jsPDF
+- **Persistent Storage**: Chats saved in browser localStorage
+- **Theme Toggle**: Light and dark mode support
+- **Source Highlighting**: Inline highlighting of relevant phrases
+- **PDF Export**: Export conversations to PDF
 - **Context Expansion**: View surrounding chunks for better understanding
 
-## 🤝 Contributing
+---
+
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -301,24 +315,21 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## License
 
-## 🙏 Acknowledgments
-
-- **FAISS** by Facebook Research for efficient similarity search
-- **Google Gemini** for embeddings and LLM capabilities
-- **FastAPI** for the excellent web framework
-- **React** and **Vite** for the modern frontend stack
-
-## 📚 Additional Resources
-
-- [FAISS Documentation](https://github.com/facebookresearch/faiss)
-- [Google Gemini API](https://ai.google.dev/)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [React Documentation](https://react.dev/)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Note**: This application requires pre-indexed documents. The indexing pipeline is separate from this repository. Ensure you have `faiss.index` and `metadata.json` files before running the application.
+## Acknowledgments
+
+- [FAISS](https://github.com/facebookresearch/faiss) by Facebook Research for efficient similarity search
+- [Google Gemini](https://ai.google.dev/) for embeddings and LLM capabilities
+- [FastAPI](https://fastapi.tiangolo.com/) for the excellent web framework
+- [React](https://react.dev/) and [Vite](https://vitejs.dev/) for the modern frontend stack
+
+---
+
+**Created by Om Gupta**

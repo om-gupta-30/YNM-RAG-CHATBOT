@@ -16,10 +16,10 @@ __pycache__
 .DS_Store
 *.md
 !README.md
-ui/node_modules
-ui/.vite
-ui/dist
-ui/dist-ssr
+frontend/node_modules
+frontend/.vite
+frontend/dist
+frontend/dist-ssr
 deploy-gcp.sh
 bom_cache
 *.log

@@ -43,10 +43,10 @@ bom_cache/
 *.log
 
 # Frontend
-ui/node_modules/
-ui/dist/
-ui/dist-ssr/
-ui/.vite/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
 
 # Optional: Large data files (uncomment if needed)
 # vision_captions.json

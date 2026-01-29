@@ -6,7 +6,7 @@ IMPORTANT: Run uvicorn from the project root directory:
     OR
     python app.py
 
-Do NOT run from ui/ directory.
+Do NOT run from frontend/ directory.
 """
 from __future__ import annotations
 
@@ -3887,7 +3887,7 @@ SCHEMA:
 
 
 # Serve built React SPA (production): must be last so /health, /ask, etc. take precedence
-UI_DIST = os.path.abspath("ui/dist")
+UI_DIST = os.path.abspath("frontend/dist")
 if os.path.isdir(UI_DIST):
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):

@@ -1,15 +1,13 @@
-# ---- UI build ----
-# Build-time env: VITE_API_URL (empty = same-origin API in production)
-FROM node:20-alpine AS ui
-WORKDIR /app/ui
-COPY ui/package*.json ./
+# ---- Frontend build ----
+FROM node:20-alpine AS frontend
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
 RUN npm ci
-COPY ui/ ./
+COPY frontend/ ./
 ENV VITE_API_URL=
 RUN npm run build
 
 # ---- Backend + runtime ----
-# Runtime env (Cloud Run): GEMINI_API_KEY (required), PORT (set by Cloud Run)
 FROM python:3.10-slim
 WORKDIR /app
 
@@ -17,7 +15,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-COPY --from=ui /app/ui/dist ./ui/dist
+COPY --from=frontend /app/frontend/dist ./frontend/dist
 
 ENV PORT=8080
 EXPOSE 8080
