@@ -1,11 +1,24 @@
-# Git and env
+# ============================================
+# Git and Version Control
+# ============================================
 .git
 .gitignore
+.gitattributes
+
+# ============================================
+# SECURITY: Environment files & secrets
+# ============================================
 .env
 .env.*
 .env.local
+.env.production
+.env.development
+.env.test
+!.env.example
 
+# ============================================
 # Python
+# ============================================
 .venv
 venv
 __pycache__
@@ -13,23 +26,56 @@ __pycache__
 *.egg-info
 .pytest_cache
 .mypy_cache
+*.pyc
 
-# IDE and OS
+# ============================================
+# IDEs and Editors
+# ============================================
 .idea
 .vscode
+*.swp
+*.swo
+*~
 .DS_Store
+
+# ============================================
+# Documentation (keep README.md)
+# ============================================
 *.md
 !README.md
 
-# Frontend dev (we rebuild in Docker)
+# ============================================
+# Frontend Development Files
+# ============================================
+# We rebuild frontend in Docker, so exclude dev artifacts
 frontend/node_modules
 frontend/.vite
 frontend/dist
 frontend/dist-ssr
+frontend/.cache
 
-# Deploy script (host-only)
+# ============================================
+# Deployment Scripts (host-only)
+# ============================================
 deploy-gcp.sh
+docker-compose.override.yml
 
-# Optional excludes (keep RAG assets: faiss.index, metadata.json, images/, vision_captions.json)
+# ============================================
+# Application Cache & Logs
+# ============================================
 bom_cache
 *.log
+logs/
+
+# ============================================
+# Testing
+# ============================================
+.pytest_cache
+.coverage
+htmlcov/
+
+# Note: Required runtime files ARE included:
+# ✓ faiss.index (vector index)
+# ✓ metadata.json (chunk metadata)
+# ✓ vision_captions.json (caption cache)
+# ✓ images/ (page images)
