@@ -5,7 +5,7 @@
 
 set -e
 
-PROJECT_ID="${GCP_PROJECT_ID:-gen-lang-client-0473608308}"
+PROJECT_ID="${GCP_PROJECT_ID:?Error: GCP_PROJECT_ID environment variable is required}"
 REGION="${GCP_REGION:-asia-south1}"
 SERVICE_NAME="${GCP_SERVICE_NAME:-rag-pdf-chatbot}"
 

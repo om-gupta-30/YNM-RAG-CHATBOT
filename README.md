@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](#license)
 
 A **Retrieval-Augmented Generation (RAG)** application for intelligent question-answering over technical PDF documents. This system combines **FAISS** vector search, **intent-based retrieval**, and **Google Gemini** to provide accurate, source-cited answers with support for figures, tables, pages, and confidence scoring.
 
@@ -106,11 +106,9 @@ rag-chatbot/
 ├── intent_classifier.py    # Query intent classification module
 ├── requirements.txt        # Python dependencies
 │
-├── faiss.index             # FAISS vector index
 ├── metadata.json           # Chunk metadata (text, source, page numbers)
 ├── vision_captions.json    # Gemini vision captions cache
 ├── images/                 # Page images (page_{n}_img_1.png)
-├── bom_cache/              # BOM extraction cache
 │
 ├── frontend/               # React frontend application
 │   ├── src/
@@ -123,13 +121,16 @@ rag-chatbot/
 │   ├── package.json        # NPM dependencies
 │   └── vite.config.js      # Vite configuration
 │
-├── .env                    # Environment variables (not in git)
 ├── .env.example            # Example environment file
 ├── .gitignore              # Git ignore rules
+├── .dockerignore           # Docker ignore rules
+├── .gcloudignore           # GCP ignore rules
 ├── Dockerfile              # Docker configuration
 ├── deploy-gcp.sh           # GCP Cloud Run deployment script
-├── README.md               # This file
-└── SECURITY.md             # Security documentation
+└── README.md               # This file
+
+# Generated files (not in git, required at runtime):
+# └── faiss.index           # FAISS vector index (generate from your PDF)
 ```
 
 ---
@@ -241,11 +242,16 @@ curl -X POST http://localhost:8000/classify-intent \
 
 ### Required Data Files
 
-The application requires these pre-generated files:
+The application requires these data files at runtime:
 
-- `faiss.index` - FAISS vector index for semantic search
-- `metadata.json` - Chunk metadata mapping IDs to text and page numbers
-- `images/` - Directory containing page images (optional but recommended)
+| File | Description | In Git? |
+|------|-------------|---------|
+| `faiss.index` | FAISS vector index for semantic search | No (generate from your PDF) |
+| `metadata.json` | Chunk metadata mapping IDs to text and page numbers | Yes |
+| `vision_captions.json` | Gemini vision captions cache | Yes |
+| `images/` | Directory containing page images | Yes |
+
+> **Note**: The `faiss.index` file must be generated from your PDF document using the embedding pipeline. It is excluded from git due to its binary nature and size.
 
 ---
 
@@ -266,14 +272,26 @@ docker run -p 8080:8080 \
 ### GCP Cloud Run
 
 ```bash
+# Set required environment variables
+export GCP_PROJECT_ID=your-project-id
+export GEMINI_API_KEY=your_api_key
+
+# Optional configuration
+export GCP_REGION=asia-south1        # Default: asia-south1
+export GCP_SERVICE_NAME=rag-pdf-chatbot  # Default: rag-pdf-chatbot
+
 # Deploy to Cloud Run
 ./deploy-gcp.sh
 ```
 
-The script handles building, pushing, and deploying to Cloud Run. Configure with environment variables:
-- `GCP_PROJECT_ID`
-- `GCP_REGION`
-- `GCP_SERVICE_NAME`
+The script handles building, pushing, and deploying to Cloud Run.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GCP_PROJECT_ID` | Yes | Your Google Cloud project ID |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key |
+| `GCP_REGION` | No | GCP region (default: asia-south1) |
+| `GCP_SERVICE_NAME` | No | Cloud Run service name (default: rag-pdf-chatbot) |
 
 ---
 
@@ -281,16 +299,25 @@ The script handles building, pushing, and deploying to Cloud Run. Configure with
 
 ### API Key Protection
 
-Your Gemini API key is protected:
+Your Gemini API key is protected by multiple layers:
 
-- **`.gitignore`** - Excludes `.env` and all `.env.*` files from git
-- **`.dockerignore`** - Excludes `.env` files from Docker builds
-- **`.gcloudignore`** - Excludes `.env` files from GCP deployments
-- **Backend-only** - API key is only used server-side, never exposed to frontend
+| Protection | File | What it does |
+|------------|------|--------------|
+| Git | `.gitignore` | Excludes `.env` and all `.env.*` files from commits |
+| Docker | `.dockerignore` | Excludes `.env` files from Docker image builds |
+| GCP | `.gcloudignore` | Excludes `.env` files from Cloud Run deployments |
+| Architecture | `app.py` | API key used server-side only, never exposed to frontend |
 
-**Never commit your `.env` file or hardcode API keys in source code.**
+### Security Checklist
 
-For GCP Cloud Run deployment, set `GEMINI_API_KEY` as a secret or environment variable in the Cloud Run console.
+Before pushing to GitHub/Vercel/GCP:
+
+- [ ] Ensure `.env` file exists locally but is NOT tracked by git
+- [ ] Verify `git status` does not show any `.env` files
+- [ ] Use environment variables for all secrets in production
+- [ ] Never hardcode API keys in source code
+
+**For GCP Cloud Run**: Set `GEMINI_API_KEY` via the `--set-env-vars` flag (handled by `deploy-gcp.sh`) or through the Cloud Run console.
 
 ---
 
@@ -319,7 +346,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ---
 
