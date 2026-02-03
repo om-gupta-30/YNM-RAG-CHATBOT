@@ -395,7 +395,7 @@ This project is licensed under the MIT License - see below for details.
 ```
 MIT License
 
-Copyright (c) 2025 Om Gupta
+Copyright (c) 2026 Om Gupta
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

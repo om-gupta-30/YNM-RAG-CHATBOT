@@ -74,6 +74,11 @@ logs/
 .coverage
 htmlcov/
 
+# ============================================
+# IDE / Editor directories
+# ============================================
+.cursor/
+
 # Note: Required runtime files ARE included:
 # ✓ faiss.index (vector index)
 # ✓ metadata.json (chunk metadata)
