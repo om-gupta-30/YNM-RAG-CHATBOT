@@ -101,7 +101,7 @@ def get_or_create_vision_caption(page_number: int, image_path: str) -> str:
         prompt = "Describe the road signs, symbols, or diagrams visible in this image in a factual way."
         
         response = model.generate_content([prompt, image])
-        caption = response.text.strip()
+        caption = (response.text or "").strip()
         
         vision_captions[str(page_number)] = caption
         
@@ -422,10 +422,9 @@ class QuestionRequest(BaseModel):
     question: str
     include_context: Optional[bool] = False
 
-# DrawingQuestionRequest removed - drawing analysis endpoints are no longer supported
-# class DrawingQuestionRequest(BaseModel):
-#     question: str
-#     drawing_analysis: dict  # The full drawing analysis JSON
+class DrawingQuestionRequest(BaseModel):
+    question: str
+    drawing_analysis: dict  # The full drawing analysis JSON
 
 class Source(BaseModel):
     chunk_id: Optional[str] = None
@@ -561,7 +560,7 @@ User question:
         title = re.sub(r"[^\w\s]", "", raw).strip() or "New Chat"
         return {"title": title[:80]}
     except Exception as e:
-        logging.warning("generate_chat_title failed: %s", e)
+        logging.exception("generate_chat_title failed: %s", e)
         return {"error": "Failed to generate title."}
 
 
@@ -1347,7 +1346,7 @@ Question:
     model = genai.GenerativeModel('gemini-2.5-flash')
     response = model.generate_content(prompt)
     
-    raw_text = response.text.strip()
+    raw_text = (response.text or "").strip()
     raw_text = clean_llm_json(raw_text)
     
     blocks = safe_parse_blocks(raw_text)
@@ -1768,7 +1767,7 @@ Guidelines:
     model = genai.GenerativeModel('gemini-2.5-flash')
     response = model.generate_content(prompt)
     
-    raw_text = response.text.strip()
+    raw_text = (response.text or "").strip()
     raw_text = clean_llm_json(raw_text)
     
     blocks = safe_parse_blocks(raw_text)

@@ -1,7 +1,8 @@
 # ============================================
 # SECURITY: Environment variables & secrets
 # ============================================
-# Never commit API keys, tokens, or credentials
+# Never commit API keys, tokens, or credentials.
+# Before push: run "git status" and ensure .env is never staged.
 .env
 .env.*
 .env.local
@@ -9,6 +10,12 @@
 .env.development
 .env.test
 !.env.example
+# Additional secret patterns (do not commit)
+*.pem
+secrets.*
+*.key
+credentials.json
+service-account*.json
 
 # ============================================
 # Python
