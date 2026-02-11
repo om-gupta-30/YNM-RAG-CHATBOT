@@ -1054,7 +1054,7 @@ def _retrieve_chunks_by_intent(intent_info: dict, question: str):
 
     # GENERAL semantic search: FAISS (k=6)
     if intent == "GENERAL_QUERY":
-        result = genai.embed_content(model="models/embedding-001", content=question)
+        result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
         query_embedding = np.array([result["embedding"]], dtype=np.float32)
 
         k = 6
@@ -1093,7 +1093,7 @@ def _retrieve_chunks_by_intent(intent_info: dict, question: str):
 
     # SECTION_QUERY or anything else: treat as GENERAL (semantic)
     # (Spec only gave special retrieval rules for FIGURE/TABLE/PAGE/GENERAL.)
-    result = genai.embed_content(model="models/embedding-001", content=question)
+    result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
     query_embedding = np.array([result["embedding"]], dtype=np.float32)
 
     k = 6
