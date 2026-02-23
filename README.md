@@ -18,21 +18,6 @@ A **Retrieval-Augmented Generation (RAG)** application for intelligent question-
 - **Structured answers** — Paragraphs and lists with source citations
 - **Modern UI** — React chat interface with dark/light theme, multi-chat, and PDF export
 - **Confidence scoring** — High/Medium/Low per answer
-- **Secure** — API key only on server; never exposed to the frontend
-
----
-
-## Table of Contents
-
-- [How It Works](#how-it-works)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Deployment](#deployment)
-- [Security](#security)
-- [API Endpoints](#api-endpoints)
-- [License](#license)
 
 ---
 
@@ -56,14 +41,13 @@ A **Retrieval-Augmented Generation (RAG)** application for intelligent question-
 
 ## Tech Stack
 
-| Layer             | Technology                                        |
-|-------------------|---------------------------------------------------|
-| Backend           | Python 3.10+, FastAPI, Uvicorn                    |
-| Vector Search     | FAISS (CPU), NumPy                                |
-| Embeddings / LLM  | Google Gemini (`gemini-embedding-001`, `gemini-2.5-flash`) |
-| PDF Processing    | PyMuPDF, pdfplumber, Pillow                       |
-| Frontend          | React 19, Vite 7                                  |
-| Deployment        | Docker, Google Cloud Run, Vercel (frontend)       |
+| Layer             | Technology                                                    |
+|-------------------|---------------------------------------------------------------|
+| Backend           | Python 3.10+, FastAPI, Uvicorn                                |
+| Vector Search     | FAISS (CPU), NumPy                                            |
+| Embeddings / LLM  | Google Gemini (`gemini-embedding-001`, `gemini-2.5-flash`)   |
+| Vision            | Pillow (page image captions via Gemini)                       |
+| Frontend          | React 19, Vite 7                                              |
 
 ---
 
@@ -73,14 +57,14 @@ A **Retrieval-Augmented Generation (RAG)** application for intelligent question-
 rag-chatbot/
 ├── app.py                  # FastAPI backend (RAG pipeline, all endpoints)
 ├── intent_classifier.py    # Query intent classification
-├── rebuild_index.py        # Rebuild FAISS index with improved chunking
+├── rebuild_index.py        # Rebuild FAISS index from PDF
 ├── requirements.txt        # Python dependencies
-├── Makefile                # Dev commands (install, dev, build, docker, clean)
+├── Makefile                # Dev commands (install, dev, build, clean)
 │
-├── metadata.json           # Chunk metadata (tracked)
-├── vision_captions.json    # Vision captions cache (tracked)
-├── faiss.index             # FAISS vector index (generated, not tracked)
-├── images/                 # Page images (tracked)
+├── metadata.json           # Chunk metadata
+├── vision_captions.json    # Vision captions cache
+├── faiss.index             # FAISS vector index (generated, gitignored)
+├── images/                 # Page images
 │
 ├── frontend/
 │   ├── src/
@@ -96,16 +80,9 @@ rag-chatbot/
 │
 ├── .env.example            # Env template (no secrets)
 ├── .gitignore
-├── .dockerignore
-├── .gcloudignore
-├── Dockerfile              # Multi-stage Docker build
-├── deploy-gcp.sh           # Cloud Run deployment script
 ├── README.md
-├── SECURITY.md
 └── LICENSE
 ```
-
-> **Note:** `faiss.index` is generated from your PDF and listed in `.gitignore`. You must generate it before the app can run (see [Quick Start](#quick-start)).
 
 ---
 
@@ -140,10 +117,10 @@ cp .env.example .env
 cd frontend && npm install && cd ..
 ```
 
-**Or use the Makefile:**
+**Or just:**
 
 ```bash
-make install               # Install backend + frontend deps
+make install
 ```
 
 ### Generate the FAISS Index
@@ -151,98 +128,33 @@ make install               # Install backend + frontend deps
 If `faiss.index` does not exist, generate it:
 
 ```bash
-make rebuild-index         # or: python3 rebuild_index.py
+make rebuild-index
 ```
 
 ### Run
 
-**Development (recommended):**
-
 ```bash
-make dev                   # Starts backend + frontend concurrently
+make dev
 ```
+
+This starts the backend at http://localhost:8000 and the frontend at http://localhost:5173.
 
 Or run them separately:
 
 ```bash
-make dev-backend           # Backend: http://localhost:8000
-make dev-frontend          # Frontend: http://localhost:5173
+make dev-backend           # http://localhost:8000
+make dev-frontend          # http://localhost:5173
 ```
-
-**Production (single process):**
-
-```bash
-cd frontend && npm run build && cd ..
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-The built frontend in `frontend/dist/` is served by FastAPI at http://localhost:8000.
 
 ---
 
-## Configuration
+## Environment Variables
 
-### Environment Variables
+| Variable         | Required | Description                                  |
+|------------------|----------|----------------------------------------------|
+| `GEMINI_API_KEY` | Yes      | Google Gemini API key (LLM + embeddings)     |
 
-| Variable         | Required | Description                                              |
-|------------------|----------|----------------------------------------------------------|
-| `GEMINI_API_KEY` | Yes      | Google Gemini API key (LLM + embeddings)                 |
-| `VITE_API_URL`   | No       | Backend URL for frontend (default: `http://127.0.0.1:8000`) |
-| `PORT`           | No       | Server port (default 8000; Cloud Run uses 8080)          |
-
-- **Local:** Copy `.env.example` to `.env` and fill in your key. Never commit `.env`.
-- **Vercel:** Set env vars in Project Settings → Environment Variables.
-- **GCP Cloud Run:** Set via `deploy-gcp.sh` or Cloud Console.
-
-### Required Data Files
-
-| File / Directory       | In Repo | Notes                              |
-|------------------------|---------|------------------------------------|
-| `metadata.json`        | Yes     | Chunk metadata                     |
-| `vision_captions.json` | Yes     | Vision caption cache               |
-| `images/`              | Yes     | Page images                        |
-| `faiss.index`          | No      | Generate with `make rebuild-index` |
-
----
-
-## Deployment
-
-### Docker
-
-```bash
-docker build -t rag-chatbot .
-docker run -p 8080:8080 -e GEMINI_API_KEY=your_key rag-chatbot
-```
-
-### Google Cloud Run
-
-```bash
-export GCP_PROJECT_ID=your-project-id
-export GEMINI_API_KEY=your_gemini_key
-chmod +x deploy-gcp.sh
-./deploy-gcp.sh
-```
-
-Optional env vars: `GCP_REGION` (default: `asia-south1`), `GCP_SERVICE_NAME` (default: `rag-pdf-chatbot`). The script sets `GEMINI_API_KEY` as a Cloud Run runtime env var — it is never baked into the image.
-
-### Vercel (Frontend Only)
-
-Deploy the `frontend/` directory to Vercel and set:
-
-- `VITE_API_URL` — URL of your backend (e.g. your Cloud Run service URL)
-
-The backend must be deployed separately. Do **not** put `GEMINI_API_KEY` in the frontend — it is only used on the backend.
-
----
-
-## Security
-
-- **No secrets in the repo** — `.env` and all `.env.*` variants are in `.gitignore`. Only `.env.example` (with no real values) is committed.
-- **Before you push:** Run `git status` and ensure `.env` is not staged. Run `git check-ignore -v .env` to confirm.
-- **Health endpoint** — Returns only `"GEMINI_API_KEY": "set"` or `"missing"`, never the actual key.
-- **Backend only** — The Gemini API key is read from the environment in `app.py` and never sent to the client.
-
-See [SECURITY.md](SECURITY.md) for more details and what to do if you accidentally commit a secret.
+Copy `.env.example` to `.env` and add your key. `.env` is gitignored and will never be pushed.
 
 ---
 
@@ -256,7 +168,7 @@ See [SECURITY.md](SECURITY.md) for more details and what to do if you accidental
 | POST   | `/expand-context`      | Surrounding chunks     |
 | POST   | `/generate-chat-title` | Title from question    |
 
-Interactive docs available at `/docs` (Swagger UI) when running.
+Interactive docs at `/docs` (Swagger UI) when running.
 
 ---
 
@@ -269,11 +181,8 @@ make dev-backend      Run FastAPI backend only
 make dev-frontend     Run Vite dev server only
 make build            Build frontend for production
 make lint             Lint frontend code
-make docker-build     Build Docker image
-make docker-run       Run Docker container
-make docker-stop      Stop Docker container
 make kill             Kill processes on dev ports
-make rebuild-index    Rebuild FAISS index from metadata
+make rebuild-index    Rebuild FAISS index
 make clean            Remove build artifacts and caches
 ```
 
@@ -291,4 +200,3 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE).
 - [Google Gemini](https://ai.google.dev/)
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [React](https://react.dev/) & [Vite](https://vitejs.dev/)
-- [PyMuPDF](https://pymupdf.readthedocs.io/) & [pdfplumber](https://github.com/jsvine/pdfplumber)

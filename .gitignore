@@ -1,8 +1,6 @@
 # ============================================
-# SECURITY: Environment variables & secrets
+# Environment variables & secrets
 # ============================================
-# Never commit API keys, tokens, or credentials.
-# Before push: run "git status" and ensure .env is never staged.
 .env
 .env.*
 .env.local
@@ -10,7 +8,6 @@
 .env.development
 .env.test
 !.env.example
-# Additional secret patterns (do not commit)
 *.pem
 secrets.*
 *.key
@@ -26,15 +23,11 @@ __pycache__/
 *.so
 *.pyc
 .Python
-
-# Virtual environments
 .venv/
 venv/
 ENV/
 env/
 .virtualenv/
-
-# Distribution / packaging
 *.egg-info/
 dist/
 build/
@@ -79,7 +72,6 @@ dmypy.json
 # ============================================
 # Operating System
 # ============================================
-# macOS
 .DS_Store
 .DS_Store?
 ._*
@@ -87,17 +79,12 @@ dmypy.json
 .LSOverride
 .Spotlight-V100
 .Trashes
-
-# Windows
 Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 Desktop.ini
 $RECYCLE.BIN/
-
-# Linux
-*~
 .directory
 .Trash-*
 
@@ -115,14 +102,8 @@ node_modules/
 # ============================================
 # Application Specific
 # ============================================
-# FAISS index (large binary, regenerate from source)
 faiss.index
-
-# Backup files
 *.bak
-
-# Cache directories
-bom_cache/
 .cache/
 
 # Logs
@@ -131,19 +112,3 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# ============================================
-# Deployment & CI/CD (optional)
-# ============================================
-# Uncomment if you want to exclude deployment scripts from git
-# deploy-gcp.sh
-# docker-compose.override.yml
-
-# ============================================
-# Optional: Exclude large data files
-# ============================================
-# Uncomment these if you want to exclude them from version control
-# They are currently tracked but can be large
-# vision_captions.json
-# images/
-# metadata.json

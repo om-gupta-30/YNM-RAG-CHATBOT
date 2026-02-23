@@ -5,8 +5,4 @@ numpy
 google-generativeai
 python-dotenv
 pillow
-pymupdf
-pdfplumber
 pydantic
-python-multipart
-
