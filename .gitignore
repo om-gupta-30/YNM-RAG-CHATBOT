@@ -118,6 +118,9 @@ node_modules/
 # FAISS index (large binary, regenerate from source)
 faiss.index
 
+# Backup files
+*.bak
+
 # Cache directories
 bom_cache/
 .cache/

@@ -28,7 +28,10 @@ from PIL import Image
 from difflib import SequenceMatcher
 import re
 import fitz  # PyMuPDF
-import pdfplumber
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
 import logging
 # Dimension extraction imports removed - keeping analysis text-only
 from intent_classifier import classify_query_intent
@@ -1054,17 +1057,58 @@ def _retrieve_chunks_by_intent(intent_info: dict, question: str):
 
     # GENERAL semantic search: FAISS (k=6)
     if intent == "GENERAL_QUERY":
-        result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
-        query_embedding = np.array([result["embedding"]], dtype=np.float32)
+        _summary_re = re.compile(
+            r"\b(summary|summarize|summarise|overview|what is this|about this document|about this pdf|main topics|brief)\b",
+            re.IGNORECASE,
+        )
+        is_summary = bool(_summary_re.search(question))
 
-        k = 6
+        if is_summary:
+            intro_pages = set(range(1, 10))
+            chunks_data = []
+            for cid, chunk_data in metadata.items():
+                if chunk_data.get("page_number") in intro_pages:
+                    chunk_text = chunk_data.get("text", "") or ""
+                    if not chunk_text.strip():
+                        continue
+                    source_type = chunk_data.get("source", "text")
+                    page_number = chunk_data.get("page_number")
+                    image_path = None
+                    if page_number:
+                        candidate = f"images/page_{page_number}_img_1.png"
+                        if os.path.exists(candidate):
+                            image_path = candidate
+                    chunks_data.append({
+                        "chunk_id": cid,
+                        "text": chunk_text,
+                        "source": source_type,
+                        "page_number": page_number,
+                        "image_path": image_path,
+                        "distance": 0.1,
+                    })
+            chunks_data = deduplicate_chunks(chunks_data)
+            return chunks_data[:10], None
+
+        try:
+            result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
+        except Exception as e:
+            logging.error(f"Embedding API error: {e}")
+            return None, "Embedding service temporarily unavailable. Please try again."
+        query_embedding = np.array([result["embedding"]], dtype=np.float32)
+        faiss.normalize_L2(query_embedding)
+
+        k = 10
         distances, indices = index.search(query_embedding, k)
 
         chunks_data = []
         for pos, idx in enumerate(indices[0]):
+            if idx < 0:
+                continue
             chunk_id = str(idx + 1)
             chunk_data = metadata.get(chunk_id, {})
             chunk_text = chunk_data.get("text", "") or ""
+            if not chunk_text.strip():
+                continue
             source_type = chunk_data.get("source", "text")
             page_number = chunk_data.get("page_number")
             distance = float(distances[0][pos]) if distances is not None else None
@@ -1087,24 +1131,31 @@ def _retrieve_chunks_by_intent(intent_info: dict, question: str):
             )
 
         chunks_data = deduplicate_chunks(chunks_data)
-        source_priority = {"text": 0, "image_ocr": 1, "vision": 2}
-        chunks_data.sort(key=lambda x: source_priority.get(x["source"], 99))
-        return chunks_data, None
+        return chunks_data[:8], None
 
-    # SECTION_QUERY or anything else: treat as GENERAL (semantic)
-    # (Spec only gave special retrieval rules for FIGURE/TABLE/PAGE/GENERAL.)
-    result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
+    # SECTION_QUERY or anything else: semantic search (same as GENERAL)
+    try:
+        result = genai.embed_content(model="models/gemini-embedding-001", content=question, output_dimensionality=768)
+    except Exception as e:
+        logging.error(f"Embedding API error: {e}")
+        return None, "Embedding service temporarily unavailable. Please try again."
     query_embedding = np.array([result["embedding"]], dtype=np.float32)
+    faiss.normalize_L2(query_embedding)
 
-    k = 6
+    k = 10
     distances, indices = index.search(query_embedding, k)
     chunks_data = []
-    for idx in indices[0]:
+    for pos, idx in enumerate(indices[0]):
+        if idx < 0:
+            continue
         chunk_id = str(idx + 1)
         chunk_data = metadata.get(chunk_id, {})
-        chunk_text = chunk_data.get("text", "")
+        chunk_text = chunk_data.get("text", "") or ""
+        if not chunk_text.strip():
+            continue
         source_type = chunk_data.get("source", "text")
         page_number = chunk_data.get("page_number")
+        distance = float(distances[0][pos]) if distances is not None else None
 
         image_path = None
         if page_number:
@@ -1119,12 +1170,11 @@ def _retrieve_chunks_by_intent(intent_info: dict, question: str):
                 "source": source_type,
                 "page_number": page_number,
                 "image_path": image_path,
+                "distance": distance,
             }
         )
     chunks_data = deduplicate_chunks(chunks_data)
-    source_priority = {"text": 0, "image_ocr": 1, "vision": 2}
-    chunks_data.sort(key=lambda x: source_priority.get(x["source"], 99))
-    return chunks_data, None
+    return chunks_data[:8], None
 
 
 @app.post("/ask", response_model=StructuredAnswerResponse | ErrorResponse)
@@ -1156,18 +1206,18 @@ async def ask_question(request: QuestionRequest):
     # These are model-generated and are not verbatim document content.
     include_vision_caption = False
     
-    # Semantic match score (only meaningful for GENERAL semantic mode).
+    # Semantic match score (only meaningful for semantic retrieval modes).
     semantic_match_score = None
-    if intent_info.get("intent") == "GENERAL_QUERY":
+    intent_name = intent_info.get("intent", "")
+    if intent_name in ("GENERAL_QUERY", "SECTION_QUERY"):
         distances = [c.get("distance") for c in chunks_data if c.get("distance") is not None]
         if distances:
-            # Heuristic mapping: sim = 1/(1+d) for L2-like distances.
             best_d = min(distances)
-            semantic_match_score = 1.0 / (1.0 + float(best_d))
+            # For normalized vectors: cos_sim = 1 - d²/2
+            semantic_match_score = max(0.0, 1.0 - (float(best_d) ** 2) / 2.0)
             
-            # PDF-only validation: If semantic match is too poor, reject non-PDF questions
-            # Threshold: if best distance > 1.5 (roughly similarity < 0.4), likely not PDF-related
-            if best_d > 1.5:
+            # Off-topic rejection: with normalized vectors, on-topic d < 0.8, off-topic d > 0.9
+            if best_d > 0.85:
                 return {
                     "error": "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document.",
                     "intent": intent_info.get("intent"),
@@ -1228,7 +1278,15 @@ async def ask_question(request: QuestionRequest):
         ))
     used_explicit_filtering = intent_info.get("intent") in {"FIGURE_QUERY", "TABLE_QUERY", "PAGE_QUERY"}
     
-    context = "\n".join(retrieved_chunks)
+    context_parts = []
+    for chunk_info in chunks_data:
+        page = chunk_info.get("page_number")
+        text = chunk_info.get("text", "")
+        if page:
+            context_parts.append(f"[Page {page}] {text}")
+        else:
+            context_parts.append(text)
+    context = "\n\n".join(context_parts)
     
     # Comparison-specific prompt override
     if intent_info.get("intent") == INTENT_COMPARISON:
@@ -1284,25 +1342,24 @@ Question:
 """
     else:
         prompt = f"""
-You are a technical document QA assistant that answers questions ONLY about the uploaded PDF document.
+You are a technical document QA assistant. You answer questions based on the provided context extracted from a PDF document.
 
-NON-NEGOTIABLE RULES:
-1. Answer ONLY from the provided context (which comes from the PDF document).
-2. If the question asks for a figure or table:
-   - Do NOT explain surrounding theory.
-   - Do NOT summarize the chapter.
-3. If the exact answer is not present in the context:
-   - Say exactly: "Not explicitly specified in the document."
-4. If the question is about something NOT in the PDF document (e.g., general knowledge, other topics, current events):
-   - Say exactly: "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document."
-
-CRITICAL: You must ONLY answer questions about the PDF document content. If the question is not related to the PDF, you MUST respond with the message in rule 4 above.
+RULES:
+1. Use the provided context to answer the question. The context comes from a PDF document about: road signs (IRC:67-2022).
+2. If the question is clearly unrelated to the document's subject matter (e.g., geography, politics, celebrities, cooking, sports, etc.):
+   - Respond ONLY with: "Please ask me only PDF-related questions. I can only answer questions about the content in the uploaded document."
+3. If the question IS related to the document's subject but the specific detail is not found in the provided context:
+   - Answer with whatever relevant information IS available in the context.
+   - If truly nothing relevant exists, say: "Not explicitly specified in the document."
+4. If the question asks for a figure or table:
+   - Focus on the referenced figure/table content only.
+5. For summary or overview questions: synthesize the key points from the provided context.
 
 ANSWER STYLE:
-- Crisp
-- Bullet points if possible
-- No filler
-- No rephrasing beyond the document text
+- Crisp and concise
+- Bullet points when listing multiple items
+- No filler or unnecessary repetition
+- Stay grounded in the context provided
 
 CRITICAL OUTPUT RULES:
 - Return VALID JSON ONLY.
@@ -1331,7 +1388,7 @@ Schema:
 
 Guidelines:
 - Prefer a list block when possible, otherwise a single short paragraph.
-- Use ONLY words and values found in the context.
+- Base your answer on the context provided.
 
 Query intent:
 {json.dumps(intent_info, ensure_ascii=False)}
@@ -2065,6 +2122,8 @@ def _pdf_extract_text_and_tables(pdf_path: str, max_pages: int = 2) -> tuple[str
     """
     combined_text_parts: list[str] = []
     all_tables: list[list[list[str]]] = []
+    if pdfplumber is None:
+        return "", []
     try:
         with pdfplumber.open(pdf_path) as pdf:
             for i, page in enumerate(pdf.pages[: max_pages or 1]):
