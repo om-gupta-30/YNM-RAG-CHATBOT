@@ -91,7 +91,10 @@ def classify_query_intent(question: str) -> Dict[str, Optional[str]]:
     # --- FIGURE ---
     m_fig = _FIGURE_RE.search(q)
     if m_fig:
-        return {"intent": INTENT_FIGURE, "target_id": _normalize_target("Fig", m_fig.group(2))}
+        return {
+            "intent": INTENT_FIGURE,
+            "target_id": _normalize_target("Fig", m_fig.group(2)),
+        }
 
     # If "fig/figure/illustration" is present anywhere, treat as FIGURE_QUERY even
     # without a numeric identifier (explicit rule).
@@ -106,7 +109,10 @@ def classify_query_intent(question: str) -> Dict[str, Optional[str]]:
     # --- TABLE ---
     m_table = _TABLE_RE.search(q)
     if m_table:
-        return {"intent": INTENT_TABLE, "target_id": _normalize_target("Table", m_table.group(2))}
+        return {
+            "intent": INTENT_TABLE,
+            "target_id": _normalize_target("Table", m_table.group(2)),
+        }
 
     if _TABLE_WORD_RE.search(q):
         # Explicit "table/tab." mention but no identifiable number.
@@ -115,7 +121,10 @@ def classify_query_intent(question: str) -> Dict[str, Optional[str]]:
     # --- PAGE ---
     m_page = _PAGE_RE.search(q)
     if m_page:
-        return {"intent": INTENT_PAGE, "target_id": _normalize_target("Page", m_page.group(1))}
+        return {
+            "intent": INTENT_PAGE,
+            "target_id": _normalize_target("Page", m_page.group(1)),
+        }
 
     # --- SECTION ---
     if _SECTION_WORD_RE.search(q):
@@ -123,5 +132,3 @@ def classify_query_intent(question: str) -> Dict[str, Optional[str]]:
 
     # --- GENERAL ---
     return {"intent": INTENT_GENERAL, "target_id": None}
-
-

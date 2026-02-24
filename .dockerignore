@@ -2,6 +2,7 @@
 .git
 .gitignore
 .gitattributes
+.github/
 
 # Environment & Secrets
 .env
@@ -15,16 +16,12 @@ __pycache__/
 *.so
 .venv/
 venv/
-ENV/
-env/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
 
 # Node
 frontend/node_modules/
-frontend/dist/
-frontend/.vite/
 node_modules/
 
 # IDEs
@@ -43,11 +40,9 @@ Thumbs.db
 *.tmp
 *.log
 
-# Documentation
-README.md
-LICENSE
+# Documentation (not needed in Docker image)
 *.md
-!.env.example
-
-# CI/CD
-.github/
+LICENSE
+scripts/
+.pre-commit-config.yaml
+.secrets.baseline

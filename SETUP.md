@@ -294,33 +294,7 @@ make lint-backend      # Backend (requires dev dependencies)
 
 ## Getting Help
 
-- **Documentation:** [README.md](README.md)
-- **Deployment:** [DEPLOYMENT.md](DEPLOYMENT.md)
-- **Security:** [SECURITY.md](SECURITY.md)
-- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Issues:** [GitHub Issues](https://github.com/om-gupta-30/YNM-RAG-CHATBOT/issues)
-
----
-
-## Quick Reference
-
-```bash
-# Setup
-make setup-env        # Create .env
-make install          # Install dependencies
-make check-env        # Verify configuration
-
-# Development
-make dev              # Run full stack
-make health           # Check backend
-make status           # Check processes
-
-# Deployment
-make verify-deploy    # Security check
-make build            # Build frontend
-
-# Maintenance
-make kill             # Kill dev servers
-make clean            # Clean artifacts
-make rebuild-index    # Rebuild FAISS index
-```
+- [README.md](README.md) — Project overview and quick start
+- [DEPLOYMENT.md](DEPLOYMENT.md) — Platform-specific deployment guides
+- [SECURITY.md](SECURITY.md) — Security policy
+- [GitHub Issues](https://github.com/om-gupta-30/YNM-RAG-CHATBOT/issues) — Bug reports and questions

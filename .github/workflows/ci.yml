@@ -90,22 +90,37 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
-    - name: Check for secrets in code
+    - name: Scan for hardcoded secrets
       run: |
-        echo "Checking for potential secrets..."
-        if grep -r "GEMINI_API_KEY=AIza" . --exclude-dir=.git --exclude-dir=node_modules --exclude=".env.example" || \
-           grep -r "api_key.*=.*['\"]AIza" . --exclude-dir=.git --exclude-dir=node_modules || \
-           grep -r "password.*=.*['\"]" . --exclude-dir=.git --exclude-dir=node_modules; then
-          echo "⚠️ WARNING: Potential secrets found in code!"
+        echo "Scanning for potential secrets..."
+        if grep -r "AIza[0-9A-Za-z_-]\{35\}" . \
+          --exclude-dir=.git \
+          --exclude-dir=node_modules \
+          --exclude-dir=.github \
+          --exclude-dir=scripts \
+          --exclude="*.md" \
+          --exclude="*.sh"; then
+          echo "::error::Gemini API key pattern detected in tracked files"
           exit 1
         fi
-        echo "✓ No secrets detected"
+        echo "No secrets detected"
     
     - name: Verify .env is not tracked
       run: |
         if git ls-files | grep -E "^\.env$"; then
-          echo "⚠️ ERROR: .env file is tracked in git!"
+          echo "::error::.env file is tracked in git"
           exit 1
         fi
-        echo "✓ .env is not tracked"
+        echo ".env is properly ignored"
+    
+    - name: Verify .gitignore coverage
+      run: |
+        for pattern in ".env" "__pycache__" "node_modules" "*.pyc" "faiss.index"; do
+          if ! grep -q "$pattern" .gitignore; then
+            echo "::warning::$pattern not in .gitignore"
+          fi
+        done
+        echo ".gitignore check complete"

@@ -106,13 +106,14 @@ frontend/build/
 node_modules/
 
 # ============================================
-# Application Specific
+# Application Specific (generated data)
 # ============================================
 faiss.index
+metadata.json
+vision_captions.json
 *.bak
 .cache/
-vision_captions.json
-metadata.json
+.secrets.baseline
 
 # Logs
 *.log

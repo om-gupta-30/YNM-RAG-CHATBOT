@@ -19,6 +19,7 @@ import google.generativeai as genai
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -38,7 +39,9 @@ BATCH_SIZE = 80
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|(?<=\n)\s*\n")
 
 
-def sentence_aware_chunks(text: str, target: int = CHUNK_TARGET, overlap: int = OVERLAP) -> list[str]:
+def sentence_aware_chunks(
+    text: str, target: int = CHUNK_TARGET, overlap: int = OVERLAP
+) -> list[str]:
     """Split text into chunks at sentence boundaries with overlap."""
     if not text or not text.strip():
         return []
@@ -65,7 +68,7 @@ def sentence_aware_chunks(text: str, target: int = CHUNK_TARGET, overlap: int = 
                 # Try to start at a word boundary
                 space_idx = tail.find(" ")
                 if space_idx != -1:
-                    tail = tail[space_idx + 1:]
+                    tail = tail[space_idx + 1 :]
                 current = tail + " " + sent
             else:
                 current = sent
@@ -152,7 +155,9 @@ def main():
 
     # Stats
     lengths = [len(v["text"]) for v in new_meta.values()]
-    print(f"Chunk sizes: min={min(lengths)}, max={max(lengths)}, avg={sum(lengths)/len(lengths):.0f}")
+    print(
+        f"Chunk sizes: min={min(lengths)}, max={max(lengths)}, avg={sum(lengths)/len(lengths):.0f}"
+    )
     print(f"Under 50 chars: {sum(1 for l in lengths if l < 50)}")
     print(f"50-500 chars: {sum(1 for l in lengths if 50 <= l < 500)}")
     print(f"500-1000 chars: {sum(1 for l in lengths if 500 <= l < 1000)}")

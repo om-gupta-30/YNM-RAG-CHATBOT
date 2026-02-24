@@ -5,49 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-02-24
 
 ### Added
-- Comprehensive deployment support (Vercel, GCP, Railway, Render, Docker)
-- GitHub Actions CI/CD workflows (linting, building, security checks)
-- Security verification script (`make verify-deploy`)
-- Pre-commit hooks configuration
-- Docker support with multi-stage builds
-- Deployment documentation (DEPLOYMENT.md)
-- Contributing guidelines (CONTRIBUTING.md)
-- Security policy (SECURITY.md)
+- Deployment support for Vercel, GCP Cloud Run, Railway, Render, and Docker
+- GitHub Actions CI/CD workflow with linting, build, and security checks
+- Pre-deployment security verification script (`make verify-deploy`)
+- Pre-commit hooks configuration for code quality and secret detection
+- Multi-stage Dockerfile
+- Documentation: SETUP.md, DEPLOYMENT.md, CONTRIBUTING.md, SECURITY.md
 - Development dependencies (requirements-dev.txt)
-- Enhanced Makefile with new commands (setup-env, check-env, health, status, verify-deploy)
+- Enhanced Makefile with setup-env, check-env, health, status, verify-deploy commands
 
 ### Changed
-- Updated README.md with deployment instructions and security notices
-- Enhanced .gitignore with comprehensive patterns
-- Improved .env.example with detailed comments
-- Updated Makefile with better organization and feedback
+- Rewrote README.md for clarity and completeness
+- Expanded .gitignore with comprehensive patterns for secrets, caches, and build artifacts
+- Improved .env.example with detailed comments and links
 
 ### Security
-- Added secret scanning in CI/CD pipeline
-- Created deployment verification script
-- Enhanced .gitignore to prevent secret leaks
-- Added .dockerignore and .gcloudignore
+- Secret scanning in CI/CD pipeline
+- .dockerignore and .gcloudignore exclude secrets from builds
+- Verified .env was never committed to git history
 
-## [1.0.0] - 2024-02-23
+## [1.0.0] - 2026-02-23
 
 ### Added
-- Initial release
-- RAG pipeline with FAISS vector search
+- RAG pipeline with FAISS vector search and Google Gemini
 - Intent-based retrieval (figure, table, page, section, general, comparison)
-- FastAPI backend with structured responses
-- React frontend with dark/light theme
-- Multi-chat support with PDF export
+- FastAPI backend with structured JSON responses
+- React 19 frontend with dark/light theme, multi-chat, and PDF export
 - Confidence scoring system
-- Vision caption support for images
+- Vision caption support for page images
 - Source citations with context expansion
-
-### Features
-- Intelligent Q&A over PDF documents
-- Support for figures, tables, and page references
-- Semantic search with Gemini embeddings
-- Structured answers (paragraphs and lists)
-- Modern chat interface
-- PDF export functionality

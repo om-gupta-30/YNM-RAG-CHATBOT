@@ -1,6 +1,7 @@
-# GCP Cloud Build ignore file
+# Git
 .git
 .gitignore
+.github/
 
 # Environment & Secrets
 .env
@@ -27,12 +28,13 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Documentation
-README.md
-*.md
-!.env.example
-
 # Build artifacts
 *.bak
 *.tmp
 *.log
+
+# Documentation (not needed in deployment)
+*.md
+LICENSE
+scripts/
+.pre-commit-config.yaml
