@@ -8,6 +8,7 @@ IMPORTANT: Run uvicorn from the project root directory:
 
 Do NOT run from frontend/ directory.
 """
+
 from __future__ import annotations
 
 from fastapi import FastAPI

@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional
 
-
 INTENT_FIGURE = "FIGURE_QUERY"
 INTENT_TABLE = "TABLE_QUERY"
 INTENT_PAGE = "PAGE_QUERY"
