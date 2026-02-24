@@ -1,0 +1,64 @@
+name: Security Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  secret-scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check for hardcoded secrets
+      run: |
+        echo "🔍 Scanning for potential secrets..."
+        
+        # Check for Gemini API keys
+        if grep -r "AIza[0-9A-Za-z_-]\{35\}" . \
+          --exclude-dir=.git \
+          --exclude-dir=node_modules \
+          --exclude-dir=.github \
+          --exclude="*.md"; then
+          echo "❌ ERROR: Gemini API key pattern detected!"
+          exit 1
+        fi
+        
+        # Check for generic API key patterns
+        if grep -r "api[_-]key.*=.*['\"][A-Za-z0-9]\{20,\}" . \
+          --exclude-dir=.git \
+          --exclude-dir=node_modules \
+          --exclude-dir=.github \
+          --exclude=".env.example" \
+          --exclude="*.md"; then
+          echo "⚠️ WARNING: Potential API key pattern detected!"
+          exit 1
+        fi
+        
+        echo "✅ No secrets detected"
+    
+    - name: Verify .env is not tracked
+      run: |
+        if git ls-files | grep -E "^\.env$"; then
+          echo "❌ ERROR: .env file is tracked in git!"
+          exit 1
+        fi
+        echo "✅ .env is properly ignored"
+    
+    - name: Check .gitignore coverage
+      run: |
+        required_ignores=(".env" "__pycache__" "node_modules" "*.pyc" ".DS_Store" "faiss.index")
+        
+        for pattern in "${required_ignores[@]}"; do
+          if ! grep -q "$pattern" .gitignore; then
+            echo "⚠️ WARNING: $pattern not in .gitignore"
+          fi
+        done
+        
+        echo "✅ .gitignore check complete"

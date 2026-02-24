@@ -11,8 +11,14 @@
 *.pem
 secrets.*
 *.key
+*.keys
 credentials.json
 service-account*.json
+config.json
+!config.example.json
+*-credentials.json
+*.p12
+*.pfx
 
 # ============================================
 # Python
@@ -105,6 +111,8 @@ node_modules/
 faiss.index
 *.bak
 .cache/
+vision_captions.json
+metadata.json
 
 # Logs
 *.log
@@ -112,3 +120,9 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.~*

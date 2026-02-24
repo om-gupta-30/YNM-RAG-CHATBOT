@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "app.py"
+    },
+    {
+      "src": "/ask",
+      "dest": "app.py"
+    },
+    {
+      "src": "/classify-intent",
+      "dest": "app.py"
+    },
+    {
+      "src": "/expand-context",
+      "dest": "app.py"
+    },
+    {
+      "src": "/generate-chat-title",
+      "dest": "app.py"
+    },
+    {
+      "src": "/images/(.*)",
+      "dest": "app.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/$1"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": "@gemini_api_key"
+  }
+}

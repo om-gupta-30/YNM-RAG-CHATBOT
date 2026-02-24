@@ -1,0 +1,38 @@
+# GCP Cloud Build ignore file
+.git
+.gitignore
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+!.env.example
+
+# Build artifacts
+*.bak
+*.tmp
+*.log
